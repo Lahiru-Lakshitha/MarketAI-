@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 import {
   User,
   Mail,
@@ -61,6 +62,7 @@ export default function Profile() {
 
   const [notifications, setNotifications] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -272,7 +274,7 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground">Update your password</p>
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsPasswordModalOpen(true)}>
               Change Password
             </Button>
           </div>
@@ -345,6 +347,12 @@ export default function Profile() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        open={isPasswordModalOpen}
+        onOpenChange={setIsPasswordModalOpen}
+      />
     </div>
   );
 }
