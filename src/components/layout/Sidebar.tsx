@@ -10,6 +10,7 @@ import {
   LogOut,
   X,
   ChevronLeft,
+  User,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +27,7 @@ const navItems = [
   { path: '/social-media', label: 'Social Captions', icon: MessageSquare },
   { path: '/google-ads', label: 'Google Ads Copy', icon: Megaphone },
   { path: '/seo-keywords', label: 'SEO Keywords', icon: Search },
+  { path: '/profile', label: 'Profile', icon: User },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed, onToggleCollapse }) => {
