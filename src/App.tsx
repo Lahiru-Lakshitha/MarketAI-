@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import SocialMedia from "./pages/SocialMedia";
 import GoogleAds from "./pages/GoogleAds";
 import SEOKeywords from "./pages/SEOKeywords";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/social-media" element={<SocialMedia />} />
                 <Route path="/google-ads" element={<GoogleAds />} />
                 <Route path="/seo-keywords" element={<SEOKeywords />} />
+                <Route path="/profile" element={<Profile />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
