@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OutputCard } from '@/components/OutputCard';
 import { GeneratingState } from '@/components/LoadingSpinner';
+import { SaveButton } from '@/components/history/SaveButton';
 import { Sparkles } from 'lucide-react';
 
 const mockHeadlines = [
@@ -43,6 +44,10 @@ const GoogleAds = () => {
     });
     setIsGenerating(false);
   };
+
+  const resultAsString = result 
+    ? `HEADLINES:\n${result.headlines.join('\n')}\n\nDESCRIPTIONS:\n${result.descriptions.join('\n\n')}`
+    : '';
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -104,6 +109,13 @@ const GoogleAds = () => {
       {/* Output Section */}
       {result && !isGenerating && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <SaveButton
+              toolType="ads"
+              input={`Product: ${productDescription}${targetAudience ? `\nAudience: ${targetAudience}` : ''}`}
+              output={resultAsString}
+            />
+          </div>
           <OutputCard
             title="Headlines (Max 30 characters each)"
             content={result.headlines}

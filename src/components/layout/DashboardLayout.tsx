@@ -9,6 +9,7 @@ const pageTitles: Record<string, string> = {
   '/social-media': 'Social Media Caption Generator',
   '/google-ads': 'Google Ads Copy Generator',
   '/seo-keywords': 'SEO Keyword Generator',
+  '/history': 'Generation History',
   '/profile': 'My Profile',
 };
 

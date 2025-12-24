@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { OutputCard } from '@/components/OutputCard';
 import { GeneratingState } from '@/components/LoadingSpinner';
+import { SaveButton } from '@/components/history/SaveButton';
 import { Sparkles } from 'lucide-react';
 
 const tones = [
@@ -62,6 +63,8 @@ const SocialMedia = () => {
     setCaptions(mockCaptions[tone] || mockCaptions.friendly);
     setIsGenerating(false);
   };
+
+  const captionsAsString = captions?.join('\n\n---\n\n') || '';
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -128,10 +131,19 @@ const SocialMedia = () => {
 
       {/* Output Section */}
       {captions && !isGenerating && (
-        <OutputCard
-          title="Generated Captions"
-          content={captions}
-        />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <SaveButton
+              toolType="social"
+              input={`Topic: ${description}\nTone: ${tone}`}
+              output={captionsAsString}
+            />
+          </div>
+          <OutputCard
+            title="Generated Captions"
+            content={captions}
+          />
+        </div>
       )}
     </div>
   );

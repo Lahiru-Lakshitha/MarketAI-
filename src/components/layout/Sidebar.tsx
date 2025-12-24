@@ -11,6 +11,7 @@ import {
   X,
   ChevronLeft,
   User,
+  History,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/social-media', label: 'Social Captions', icon: MessageSquare },
   { path: '/google-ads', label: 'Google Ads Copy', icon: Megaphone },
   { path: '/seo-keywords', label: 'SEO Keywords', icon: Search },
+  { path: '/history', label: 'History', icon: History },
   { path: '/profile', label: 'Profile', icon: User },
 ];
 

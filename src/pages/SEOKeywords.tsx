@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { GeneratingState } from '@/components/LoadingSpinner';
+import { SaveButton } from '@/components/history/SaveButton';
 import { Sparkles, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +64,10 @@ const SEOKeywords = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const keywordsAsString = keywords 
+    ? keywords.map(k => `${k.keyword} (Volume: ${k.volume}, Difficulty: ${k.difficulty})`).join('\n')
+    : '';
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Input Section */}
@@ -114,24 +119,31 @@ const SEOKeywords = () => {
         <Card className="animate-slide-up">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="text-lg">Generated Keywords</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyAll}
-              className="gap-2"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4 text-green-500" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  Copy All
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <SaveButton
+                toolType="seo"
+                input={`Topic: ${topic}`}
+                output={keywordsAsString}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyAll}
+                className="gap-2"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-500" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copy All
+                  </>
+                )}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
