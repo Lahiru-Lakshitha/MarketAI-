@@ -6,23 +6,60 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { GeneratingState } from '@/components/LoadingSpinner';
 import { SaveButton } from '@/components/history/SaveButton';
+import { ToneSelector, ToneType } from '@/components/ToneSelector';
+import { RegenerateButton } from '@/components/RegenerateButton';
+import { CopyButton } from '@/components/CopyButton';
 import { Sparkles, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const mockKeywords = [
-  { keyword: 'digital marketing services', volume: 'High', difficulty: 'Medium' },
-  { keyword: 'online marketing strategy', volume: 'High', difficulty: 'High' },
-  { keyword: 'social media marketing', volume: 'Very High', difficulty: 'High' },
-  { keyword: 'content marketing tips', volume: 'Medium', difficulty: 'Low' },
-  { keyword: 'SEO best practices', volume: 'High', difficulty: 'Medium' },
-  { keyword: 'email marketing automation', volume: 'Medium', difficulty: 'Medium' },
-  { keyword: 'PPC advertising', volume: 'Medium', difficulty: 'High' },
-  { keyword: 'marketing analytics tools', volume: 'Medium', difficulty: 'Low' },
-  { keyword: 'brand awareness campaign', volume: 'Medium', difficulty: 'Medium' },
-  { keyword: 'lead generation strategies', volume: 'High', difficulty: 'Medium' },
-  { keyword: 'conversion optimization', volume: 'Medium', difficulty: 'Low' },
-  { keyword: 'marketing ROI calculator', volume: 'Low', difficulty: 'Low' },
-];
+interface KeywordResult {
+  keyword: string;
+  volume: string;
+  difficulty: string;
+}
+
+const mockKeywords: Record<ToneType, KeywordResult[]> = {
+  professional: [
+    { keyword: 'enterprise solutions', volume: 'High', difficulty: 'High' },
+    { keyword: 'business consulting services', volume: 'High', difficulty: 'Medium' },
+    { keyword: 'corporate strategy planning', volume: 'Medium', difficulty: 'Medium' },
+    { keyword: 'professional development programs', volume: 'Medium', difficulty: 'Low' },
+    { keyword: 'executive coaching', volume: 'Medium', difficulty: 'Medium' },
+    { keyword: 'B2B service provider', volume: 'High', difficulty: 'High' },
+  ],
+  friendly: [
+    { keyword: 'helpful tips and tricks', volume: 'High', difficulty: 'Low' },
+    { keyword: 'beginner friendly guide', volume: 'Very High', difficulty: 'Low' },
+    { keyword: 'easy step by step', volume: 'High', difficulty: 'Low' },
+    { keyword: 'community support forum', volume: 'Medium', difficulty: 'Low' },
+    { keyword: 'how to get started', volume: 'Very High', difficulty: 'Medium' },
+    { keyword: 'simple solutions for', volume: 'Medium', difficulty: 'Low' },
+  ],
+  sales: [
+    { keyword: 'best deals online', volume: 'Very High', difficulty: 'High' },
+    { keyword: 'limited time offer', volume: 'High', difficulty: 'Medium' },
+    { keyword: 'discount code today', volume: 'Very High', difficulty: 'Medium' },
+    { keyword: 'buy now save big', volume: 'High', difficulty: 'Medium' },
+    { keyword: 'exclusive sale event', volume: 'Medium', difficulty: 'Low' },
+    { keyword: 'special promotion', volume: 'High', difficulty: 'Medium' },
+  ],
+  creative: [
+    { keyword: 'innovative design ideas', volume: 'Medium', difficulty: 'Low' },
+    { keyword: 'unique creative solutions', volume: 'Medium', difficulty: 'Medium' },
+    { keyword: 'artistic inspiration gallery', volume: 'Medium', difficulty: 'Low' },
+    { keyword: 'custom creative services', volume: 'Medium', difficulty: 'Medium' },
+    { keyword: 'original content creation', volume: 'High', difficulty: 'Medium' },
+    { keyword: 'creative portfolio examples', volume: 'Medium', difficulty: 'Low' },
+  ],
+  casual: [
+    { keyword: 'cool things to try', volume: 'High', difficulty: 'Low' },
+    { keyword: 'fun ideas for', volume: 'Very High', difficulty: 'Low' },
+    { keyword: 'quick tips for beginners', volume: 'High', difficulty: 'Low' },
+    { keyword: 'easy ways to', volume: 'Very High', difficulty: 'Medium' },
+    { keyword: 'simple hacks for', volume: 'High', difficulty: 'Low' },
+    { keyword: 'everyday solutions', volume: 'Medium', difficulty: 'Low' },
+  ],
+};
 
 const difficultyColors: Record<string, string> = {
   Low: 'bg-green-500/10 text-green-600 dark:text-green-400',
@@ -39,21 +76,26 @@ const volumeColors: Record<string, string> = {
 
 const SEOKeywords = () => {
   const [topic, setTopic] = useState('');
+  const [tone, setTone] = useState<ToneType>('professional');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [keywords, setKeywords] = useState<typeof mockKeywords | null>(null);
+  const [keywords, setKeywords] = useState<KeywordResult[] | null>(null);
   const [copied, setCopied] = useState(false);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
     
     setIsGenerating(true);
-    setKeywords(null);
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    setKeywords(mockKeywords);
+    setKeywords(mockKeywords[tone] || mockKeywords.professional);
     setIsGenerating(false);
+  };
+
+  const handleRegenerate = async () => {
+    if (!topic.trim()) return;
+    await handleGenerate();
   };
 
   const handleCopyAll = async () => {
@@ -86,27 +128,40 @@ const SEOKeywords = () => {
             <Label htmlFor="topic">Topic or business niche</Label>
             <Input
               id="topic"
-              placeholder="E.g., Digital marketing agency, Organic skincare products, SaaS project management..."
+              placeholder="Example: beachfront hotel in Hikkaduwa with ocean views and water sports"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              Include location and specific features for more targeted keyword suggestions.
+            </p>
           </div>
 
-          <Button
-            variant="gradient"
-            size="lg"
-            onClick={handleGenerate}
-            disabled={!topic.trim() || isGenerating}
-            className="w-full md:w-auto"
-          >
-            <Sparkles className="h-4 w-4" />
-            Generate Keywords
-          </Button>
+          <ToneSelector value={tone} onValueChange={setTone} />
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="gradient"
+              size="lg"
+              onClick={handleGenerate}
+              disabled={!topic.trim() || isGenerating}
+            >
+              <Sparkles className="h-4 w-4" />
+              Generate Keywords
+            </Button>
+            {keywords && (
+              <RegenerateButton
+                onClick={handleRegenerate}
+                isLoading={isGenerating}
+                disabled={!topic.trim()}
+              />
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Loading State */}
-      {isGenerating && (
+      {isGenerating && !keywords && (
         <Card>
           <CardContent className="pt-6">
             <GeneratingState />
@@ -122,7 +177,7 @@ const SEOKeywords = () => {
             <div className="flex items-center gap-2">
               <SaveButton
                 toolType="seo"
-                input={`Topic: ${topic}`}
+                input={`Topic: ${topic}\nTone: ${tone}`}
                 output={keywordsAsString}
               />
               <Button

@@ -3,26 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { OutputCard } from '@/components/OutputCard';
 import { GeneratingState } from '@/components/LoadingSpinner';
 import { SaveButton } from '@/components/history/SaveButton';
+import { ToneSelector, ToneType } from '@/components/ToneSelector';
+import { RegenerateButton } from '@/components/RegenerateButton';
 import { Sparkles } from 'lucide-react';
 
-const tones = [
-  { value: 'professional', label: 'Professional' },
-  { value: 'friendly', label: 'Friendly' },
-  { value: 'sales', label: 'Sales-focused' },
-  { value: 'fun', label: 'Fun & Playful' },
-];
-
-const mockCaptions: Record<string, string[]> = {
+const mockCaptions: Record<ToneType, string[]> = {
   professional: [
     "Elevate your business with our cutting-edge solutions. We're committed to driving your success. 🚀 #BusinessGrowth #Innovation",
     "Excellence isn't just our goal—it's our standard. Discover how we can transform your operations. 💼 #ProfessionalServices",
@@ -38,16 +26,21 @@ const mockCaptions: Record<string, string[]> = {
     "Ready to transform your life? Our bestselling product is back in stock! Get yours before they're gone! ⚡",
     "What if we told you there's a better way? Try us risk-free for 30 days. Your satisfaction, guaranteed! ✨",
   ],
-  fun: [
-    "POV: You just discovered your new obsession 😍 Tag a friend who needs this in their life! 🎉",
-    "That Friday feeling when you realize... we've got you covered! 🎊 Who else is ready for the weekend?",
-    "Plot twist: It actually IS as good as it looks! 🤩 Drop a 🙌 if you're feeling this vibe!",
+  creative: [
+    "Imagine a world where your dreams become reality... ✨ That's what we're creating, one step at a time. Join the revolution!",
+    "Colors. Vibes. Energy. We're not just building a brand—we're crafting an experience. Ready to dive in? 🎨",
+    "They said it couldn't be done. We did it anyway. Here's to the dreamers and doers! 🌟 #Innovation #Creative",
+  ],
+  casual: [
+    "Just dropped something cool 😎 Check it out when you get a chance. No pressure, but you might love it!",
+    "Real talk: this is one of our favorites. Give it a try and tell us what you think! 🙌",
+    "Weekend vibes + our latest drop = perfect combo. Who's in? 🎉",
   ],
 };
 
 const SocialMedia = () => {
   const [description, setDescription] = useState('');
-  const [tone, setTone] = useState('friendly');
+  const [tone, setTone] = useState<ToneType>('friendly');
   const [isGenerating, setIsGenerating] = useState(false);
   const [captions, setCaptions] = useState<string[] | null>(null);
 
@@ -55,13 +48,17 @@ const SocialMedia = () => {
     if (!description.trim()) return;
     
     setIsGenerating(true);
-    setCaptions(null);
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     setCaptions(mockCaptions[tone] || mockCaptions.friendly);
     setIsGenerating(false);
+  };
+
+  const handleRegenerate = async () => {
+    if (!description.trim()) return;
+    await handleGenerate();
   };
 
   const captionsAsString = captions?.join('\n\n---\n\n') || '';
@@ -84,44 +81,41 @@ const SocialMedia = () => {
             <Label htmlFor="description">What do you want to promote?</Label>
             <Textarea
               id="description"
-              placeholder="E.g., A new fitness app that helps users track their workouts and nutrition with AI-powered recommendations..."
+              placeholder="Example: Promote a new coffee shop opening in Colombo with a cozy ambiance and specialty drinks"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[120px]"
             />
+            <p className="text-xs text-muted-foreground">
+              Be specific about your product, audience, and key message for best results.
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tone">Select tone</Label>
-            <Select value={tone} onValueChange={setTone}>
-              <SelectTrigger id="tone" className="w-full md:w-[200px]">
-                <SelectValue placeholder="Select tone" />
-              </SelectTrigger>
-              <SelectContent>
-                {tones.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <ToneSelector value={tone} onValueChange={setTone} />
 
-          <Button
-            variant="gradient"
-            size="lg"
-            onClick={handleGenerate}
-            disabled={!description.trim() || isGenerating}
-            className="w-full md:w-auto"
-          >
-            <Sparkles className="h-4 w-4" />
-            Generate Captions
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="gradient"
+              size="lg"
+              onClick={handleGenerate}
+              disabled={!description.trim() || isGenerating}
+            >
+              <Sparkles className="h-4 w-4" />
+              Generate Captions
+            </Button>
+            {captions && (
+              <RegenerateButton
+                onClick={handleRegenerate}
+                isLoading={isGenerating}
+                disabled={!description.trim()}
+              />
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* Loading State */}
-      {isGenerating && (
+      {isGenerating && !captions && (
         <Card>
           <CardContent className="pt-6">
             <GeneratingState />
