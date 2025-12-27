@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { OutputCard } from '@/components/OutputCard';
-import { GeneratingState } from '@/components/LoadingSpinner';
+import { GeneratingState, OutputSkeleton } from '@/components/LoadingSpinner';
 import { SaveButton } from '@/components/history/SaveButton';
 import { ToneSelector, ToneType } from '@/components/ToneSelector';
 import { RegenerateButton } from '@/components/RegenerateButton';
@@ -45,6 +45,11 @@ const SocialMedia = () => {
         .map((c: string) => c.trim());
 
       setCaptions(parsedCaptions.length > 0 ? parsedCaptions : [captionsText]);
+      
+      toast({
+        title: 'Generated!',
+        description: 'Your social media captions are ready.',
+      });
     } catch (error) {
       console.error('Error generating captions:', error);
       toast({
@@ -86,13 +91,14 @@ const SocialMedia = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[120px]"
+              disabled={isGenerating}
             />
             <p className="text-xs text-muted-foreground">
               Be specific about your product, audience, and key message for best results.
             </p>
           </div>
 
-          <ToneSelector value={tone} onValueChange={setTone} />
+          <ToneSelector value={tone} onValueChange={setTone} disabled={isGenerating} />
 
           <div className="flex flex-wrap gap-3">
             <Button
@@ -101,10 +107,19 @@ const SocialMedia = () => {
               onClick={handleGenerate}
               disabled={!description.trim() || isGenerating}
             >
-              <Sparkles className="h-4 w-4" />
-              Generate Captions
+              {isGenerating ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate Captions
+                </>
+              )}
             </Button>
-            {captions && (
+            {captions && !isGenerating && (
               <RegenerateButton
                 onClick={handleRegenerate}
                 isLoading={isGenerating}
@@ -115,18 +130,22 @@ const SocialMedia = () => {
         </CardContent>
       </Card>
 
-      {/* Loading State */}
-      {isGenerating && !captions && (
+      {/* Loading State with Skeleton */}
+      {isGenerating && (
         <Card>
           <CardContent className="pt-6">
-            <GeneratingState />
+            {!captions ? (
+              <GeneratingState />
+            ) : (
+              <OutputSkeleton />
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Output Section */}
       {captions && !isGenerating && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           <div className="flex justify-end">
             <SaveButton
               toolType="social"

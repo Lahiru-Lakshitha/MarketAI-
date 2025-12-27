@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { OutputCard } from '@/components/OutputCard';
-import { GeneratingState } from '@/components/LoadingSpinner';
+import { GeneratingState, OutputSkeleton } from '@/components/LoadingSpinner';
 import { SaveButton } from '@/components/history/SaveButton';
 import { ToneSelector, ToneType } from '@/components/ToneSelector';
 import { RegenerateButton } from '@/components/RegenerateButton';
@@ -64,6 +64,11 @@ const GoogleAds = () => {
         headlines: headlines.length > 0 ? headlines : ['Generated headline'],
         descriptions: descriptions.length > 0 ? descriptions : ['Generated description'],
       });
+      
+      toast({
+        title: 'Generated!',
+        description: 'Your Google Ads copy is ready.',
+      });
     } catch (error) {
       console.error('Error generating ads:', error);
       toast({
@@ -107,6 +112,7 @@ const GoogleAds = () => {
               value={productDescription}
               onChange={(e) => setProductDescription(e.target.value)}
               className="min-h-[120px]"
+              disabled={isGenerating}
             />
             <p className="text-xs text-muted-foreground">
               Include key features, benefits, and unique selling points for better results.
@@ -120,10 +126,11 @@ const GoogleAds = () => {
               placeholder="Example: Small business owners, marketing managers, startups"
               value={targetAudience}
               onChange={(e) => setTargetAudience(e.target.value)}
+              disabled={isGenerating}
             />
           </div>
 
-          <ToneSelector value={tone} onValueChange={setTone} />
+          <ToneSelector value={tone} onValueChange={setTone} disabled={isGenerating} />
 
           <div className="flex flex-wrap gap-3">
             <Button
@@ -132,10 +139,19 @@ const GoogleAds = () => {
               onClick={handleGenerate}
               disabled={!productDescription.trim() || isGenerating}
             >
-              <Sparkles className="h-4 w-4" />
-              Generate Ad Copy
+              {isGenerating ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate Ad Copy
+                </>
+              )}
             </Button>
-            {result && (
+            {result && !isGenerating && (
               <RegenerateButton
                 onClick={handleRegenerate}
                 isLoading={isGenerating}
@@ -146,18 +162,22 @@ const GoogleAds = () => {
         </CardContent>
       </Card>
 
-      {/* Loading State */}
-      {isGenerating && !result && (
+      {/* Loading State with Skeleton */}
+      {isGenerating && (
         <Card>
           <CardContent className="pt-6">
-            <GeneratingState />
+            {!result ? (
+              <GeneratingState />
+            ) : (
+              <OutputSkeleton />
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Output Section */}
       {result && !isGenerating && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           <div className="flex justify-end">
             <SaveButton
               toolType="ads"

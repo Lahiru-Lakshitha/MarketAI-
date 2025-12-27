@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { GeneratingState } from '@/components/LoadingSpinner';
 import { SaveButton } from '@/components/history/SaveButton';
 import { ToneSelector, ToneType } from '@/components/ToneSelector';
@@ -33,6 +34,36 @@ const volumeColors: Record<string, string> = {
   High: 'bg-primary/20 text-primary',
   'Very High': 'bg-primary/30 text-primary font-medium',
 };
+
+const KeywordTableSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="flex items-center justify-between">
+      <Skeleton className="h-6 w-40" />
+      <div className="flex gap-2">
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-8 w-20" />
+      </div>
+    </div>
+    <div className="border rounded-lg overflow-hidden">
+      <div className="bg-muted/30 p-3 border-b">
+        <div className="flex gap-4">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      </div>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="p-3 border-b last:border-0">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const SEOKeywords = () => {
   const [topic, setTopic] = useState('');
@@ -75,6 +106,11 @@ const SEOKeywords = () => {
       }
 
       setKeywords(parsedKeywords);
+      
+      toast({
+        title: 'Generated!',
+        description: 'Your SEO keywords are ready.',
+      });
     } catch (error) {
       console.error('Error generating keywords:', error);
       toast({
@@ -97,6 +133,10 @@ const SEOKeywords = () => {
     const text = keywords.map(k => k.keyword).join(', ');
     await navigator.clipboard.writeText(text);
     setCopied(true);
+    toast({
+      title: 'Copied!',
+      description: 'All keywords copied to clipboard.',
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -125,13 +165,14 @@ const SEOKeywords = () => {
               placeholder="Example: beachfront hotel in Hikkaduwa with ocean views and water sports"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
+              disabled={isGenerating}
             />
             <p className="text-xs text-muted-foreground">
               Include location and specific features for more targeted keyword suggestions.
             </p>
           </div>
 
-          <ToneSelector value={tone} onValueChange={setTone} />
+          <ToneSelector value={tone} onValueChange={setTone} disabled={isGenerating} />
 
           <div className="flex flex-wrap gap-3">
             <Button
@@ -140,10 +181,19 @@ const SEOKeywords = () => {
               onClick={handleGenerate}
               disabled={!topic.trim() || isGenerating}
             >
-              <Sparkles className="h-4 w-4" />
-              Generate Keywords
+              {isGenerating ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate Keywords
+                </>
+              )}
             </Button>
-            {keywords && (
+            {keywords && !isGenerating && (
               <RegenerateButton
                 onClick={handleRegenerate}
                 isLoading={isGenerating}
@@ -154,18 +204,22 @@ const SEOKeywords = () => {
         </CardContent>
       </Card>
 
-      {/* Loading State */}
-      {isGenerating && !keywords && (
+      {/* Loading State with Skeleton */}
+      {isGenerating && (
         <Card>
           <CardContent className="pt-6">
-            <GeneratingState />
+            {!keywords ? (
+              <GeneratingState />
+            ) : (
+              <KeywordTableSkeleton />
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Output Section */}
       {keywords && !isGenerating && (
-        <Card className="animate-slide-up">
+        <Card className="animate-fade-in">
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="text-lg">Generated Keywords</CardTitle>
             <div className="flex items-center gap-2">
@@ -236,7 +290,13 @@ const SEOKeywords = () => {
                     key={index}
                     variant="secondary"
                     className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() => navigator.clipboard.writeText(item.keyword)}
+                    onClick={() => {
+                      navigator.clipboard.writeText(item.keyword);
+                      toast({
+                        title: 'Copied!',
+                        description: `"${item.keyword}" copied to clipboard.`,
+                      });
+                    }}
                   >
                     {item.keyword}
                   </Badge>
