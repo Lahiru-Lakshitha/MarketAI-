@@ -26,6 +26,7 @@ const tools = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there';
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
@@ -41,7 +42,7 @@ const Dashboard = () => {
               <span className="text-sm font-medium text-primary">AI-Powered Marketing</span>
             </div>
             <CardTitle className="text-2xl lg:text-3xl">
-              Welcome back, {user?.name || 'there'}!
+              Welcome back, {userName}!
             </CardTitle>
             <CardDescription className="text-base max-w-2xl">
               Supercharge your digital marketing with AI-generated content. Create compelling social media captions, 

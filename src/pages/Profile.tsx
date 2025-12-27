@@ -51,8 +51,10 @@ export default function Profile() {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'John Doe';
+
   const [formData, setFormData] = useState({
-    fullName: user?.name || 'John Doe',
+    fullName: userName,
     email: user?.email || 'john@example.com',
     phone: '+1 (555) 123-4567',
     company: 'MarketAI Corp',

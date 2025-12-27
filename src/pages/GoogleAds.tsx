@@ -10,72 +10,8 @@ import { SaveButton } from '@/components/history/SaveButton';
 import { ToneSelector, ToneType } from '@/components/ToneSelector';
 import { RegenerateButton } from '@/components/RegenerateButton';
 import { Sparkles } from 'lucide-react';
-
-const mockHeadlines: Record<ToneType, string[]> = {
-  professional: [
-    "Industry-Leading Solutions",
-    "Trusted by 10,000+ Companies",
-    "Enterprise-Grade Quality",
-    "Expert Team, Proven Results",
-    "Transform Your Business Today",
-  ],
-  friendly: [
-    "We're Here to Help You Grow",
-    "Your Success is Our Priority",
-    "Join Our Happy Customers",
-    "Let's Build Something Great",
-    "Start Your Journey With Us",
-  ],
-  sales: [
-    "Limited Time: 50% Off!",
-    "Don't Miss This Deal",
-    "Get Results in 30 Days",
-    "Risk-Free Trial Available",
-    "Act Now – Save Big!",
-  ],
-  creative: [
-    "Reimagine What's Possible",
-    "Where Innovation Meets You",
-    "The Future Starts Here",
-    "Unleash Your Potential",
-    "Think Different. Act Bold.",
-  ],
-  casual: [
-    "Check This Out",
-    "You'll Love What We Do",
-    "Simple. Easy. Effective.",
-    "Give It a Try Today",
-    "See What the Buzz Is About",
-  ],
-};
-
-const mockDescriptions: Record<ToneType, string[]> = {
-  professional: [
-    "Discover the #1 rated platform for business growth. Join thousands of satisfied customers and see why we're the industry leader. Start free today.",
-    "Our proven methodology has helped businesses achieve 300% ROI. Get personalized recommendations and expert support.",
-    "Simple, powerful, and affordable. Everything you need to succeed in one platform. No credit card required.",
-  ],
-  friendly: [
-    "We'd love to help you reach your goals! Our friendly team is here to support you every step of the way. Let's get started!",
-    "Join a community of happy users who've transformed their business. We can't wait to welcome you!",
-    "Making your life easier is what we do best. Try us out and see the difference for yourself!",
-  ],
-  sales: [
-    "Limited time offer! Sign up now and get exclusive access to premium features. Don't let this opportunity pass you by!",
-    "Join 50,000+ customers who saved big. Special pricing ends soon – act now to lock in your discount!",
-    "Risk-free guarantee: If you're not satisfied, get a full refund. No questions asked. Order today!",
-  ],
-  creative: [
-    "Break free from the ordinary. Our innovative approach helps you stand out and make a lasting impression.",
-    "Creativity meets functionality. Discover a new way of thinking that will transform how you work.",
-    "Dare to be different. Join the movement of forward-thinkers who are changing the game.",
-  ],
-  casual: [
-    "Looking for something that just works? We've got you covered. Simple, straightforward, and effective.",
-    "No complicated stuff here. Just great results without the hassle. Give it a shot!",
-    "Real talk: this is what you've been looking for. Try it out – we think you'll love it.",
-  ],
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const GoogleAds = () => {
   const [productDescription, setProductDescription] = useState('');
@@ -83,20 +19,61 @@ const GoogleAds = () => {
   const [tone, setTone] = useState<ToneType>('professional');
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<{ headlines: string[]; descriptions: string[] } | null>(null);
+  const { toast } = useToast();
 
   const handleGenerate = async () => {
     if (!productDescription.trim()) return;
     
     setIsGenerating(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setResult({
-      headlines: mockHeadlines[tone] || mockHeadlines.professional,
-      descriptions: mockDescriptions[tone] || mockDescriptions.professional,
-    });
-    setIsGenerating(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-ads', {
+        body: { productDescription, targetAudience, tone },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Parse the ad copy from the response
+      const adCopyText = data.adCopy;
+      
+      // Extract headlines
+      const headlinesMatch = adCopyText.match(/HEADLINES?:?\s*([\s\S]*?)(?=DESCRIPTIONS?:|$)/i);
+      const descriptionsMatch = adCopyText.match(/DESCRIPTIONS?:?\s*([\s\S]*?)$/i);
+
+      const headlines = headlinesMatch
+        ? headlinesMatch[1]
+            .split(/\d+\.\s+/)
+            .filter((h: string) => h.trim())
+            .map((h: string) => h.trim().replace(/\n/g, ''))
+        : [];
+
+      const descriptions = descriptionsMatch
+        ? descriptionsMatch[1]
+            .split(/\d+\.\s+/)
+            .filter((d: string) => d.trim())
+            .map((d: string) => d.trim().replace(/\n/g, ''))
+        : [];
+
+      setResult({
+        headlines: headlines.length > 0 ? headlines : ['Generated headline'],
+        descriptions: descriptions.length > 0 ? descriptions : ['Generated description'],
+      });
+    } catch (error) {
+      console.error('Error generating ads:', error);
+      toast({
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Failed to generate ad copy. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleRegenerate = async () => {
