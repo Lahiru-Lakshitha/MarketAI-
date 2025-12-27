@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { useHistory, ToolType } from '@/contexts/HistoryContext';
 import { HistoryCard } from '@/components/history/HistoryCard';
 import { ViewEditModal } from '@/components/history/ViewEditModal';
@@ -14,6 +15,7 @@ type FilterType = 'all' | ToolType;
 
 const History = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit'>('view');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,7 +25,18 @@ const History = () => {
   const { getItemsByType, updateItem, deleteItem: removeItem } = useHistory();
   const { toast } = useToast();
   
-  const items = getItemsByType(activeFilter);
+  const allItems = getItemsByType(activeFilter);
+  
+  // Filter items by search query
+  const items = useMemo(() => {
+    if (!searchQuery.trim()) return allItems;
+    
+    const query = searchQuery.toLowerCase();
+    return allItems.filter(item => 
+      item.input.toLowerCase().includes(query) ||
+      item.output.toLowerCase().includes(query)
+    );
+  }, [allItems, searchQuery]);
 
   const handleView = (item: HistoryItem) => {
     setSelectedItem(item);
@@ -65,21 +78,36 @@ const History = () => {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Filter Tabs */}
-      <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
-        <TabsList className="w-full justify-start flex-wrap h-auto gap-2 bg-transparent p-0">
-          {filters.map((filter) => (
-            <TabsTrigger
-              key={filter.value}
-              value={filter.value}
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
-            >
-              <filter.icon className="h-4 w-4" />
-              {filter.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {/* Search and Filter */}
+      <div className="space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search history by content or prompt..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {/* Filter Tabs */}
+        <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
+          <TabsList className="w-full justify-start flex-wrap h-auto gap-2 bg-transparent p-0">
+            {filters.map((filter) => (
+              <TabsTrigger
+                key={filter.value}
+                value={filter.value}
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2"
+              >
+                <filter.icon className="h-4 w-4" />
+                {filter.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* Loading State */}
       {isLoading && (
