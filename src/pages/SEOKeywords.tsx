@@ -8,9 +8,10 @@ import { GeneratingState } from '@/components/LoadingSpinner';
 import { SaveButton } from '@/components/history/SaveButton';
 import { ToneSelector, ToneType } from '@/components/ToneSelector';
 import { RegenerateButton } from '@/components/RegenerateButton';
-import { CopyButton } from '@/components/CopyButton';
 import { Sparkles, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface KeywordResult {
   keyword: string;
@@ -18,53 +19,12 @@ interface KeywordResult {
   difficulty: string;
 }
 
-const mockKeywords: Record<ToneType, KeywordResult[]> = {
-  professional: [
-    { keyword: 'enterprise solutions', volume: 'High', difficulty: 'High' },
-    { keyword: 'business consulting services', volume: 'High', difficulty: 'Medium' },
-    { keyword: 'corporate strategy planning', volume: 'Medium', difficulty: 'Medium' },
-    { keyword: 'professional development programs', volume: 'Medium', difficulty: 'Low' },
-    { keyword: 'executive coaching', volume: 'Medium', difficulty: 'Medium' },
-    { keyword: 'B2B service provider', volume: 'High', difficulty: 'High' },
-  ],
-  friendly: [
-    { keyword: 'helpful tips and tricks', volume: 'High', difficulty: 'Low' },
-    { keyword: 'beginner friendly guide', volume: 'Very High', difficulty: 'Low' },
-    { keyword: 'easy step by step', volume: 'High', difficulty: 'Low' },
-    { keyword: 'community support forum', volume: 'Medium', difficulty: 'Low' },
-    { keyword: 'how to get started', volume: 'Very High', difficulty: 'Medium' },
-    { keyword: 'simple solutions for', volume: 'Medium', difficulty: 'Low' },
-  ],
-  sales: [
-    { keyword: 'best deals online', volume: 'Very High', difficulty: 'High' },
-    { keyword: 'limited time offer', volume: 'High', difficulty: 'Medium' },
-    { keyword: 'discount code today', volume: 'Very High', difficulty: 'Medium' },
-    { keyword: 'buy now save big', volume: 'High', difficulty: 'Medium' },
-    { keyword: 'exclusive sale event', volume: 'Medium', difficulty: 'Low' },
-    { keyword: 'special promotion', volume: 'High', difficulty: 'Medium' },
-  ],
-  creative: [
-    { keyword: 'innovative design ideas', volume: 'Medium', difficulty: 'Low' },
-    { keyword: 'unique creative solutions', volume: 'Medium', difficulty: 'Medium' },
-    { keyword: 'artistic inspiration gallery', volume: 'Medium', difficulty: 'Low' },
-    { keyword: 'custom creative services', volume: 'Medium', difficulty: 'Medium' },
-    { keyword: 'original content creation', volume: 'High', difficulty: 'Medium' },
-    { keyword: 'creative portfolio examples', volume: 'Medium', difficulty: 'Low' },
-  ],
-  casual: [
-    { keyword: 'cool things to try', volume: 'High', difficulty: 'Low' },
-    { keyword: 'fun ideas for', volume: 'Very High', difficulty: 'Low' },
-    { keyword: 'quick tips for beginners', volume: 'High', difficulty: 'Low' },
-    { keyword: 'easy ways to', volume: 'Very High', difficulty: 'Medium' },
-    { keyword: 'simple hacks for', volume: 'High', difficulty: 'Low' },
-    { keyword: 'everyday solutions', volume: 'Medium', difficulty: 'Low' },
-  ],
-};
-
 const difficultyColors: Record<string, string> = {
   Low: 'bg-green-500/10 text-green-600 dark:text-green-400',
   Medium: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
   High: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  Easy: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  Hard: 'bg-red-500/10 text-red-600 dark:text-red-400',
 };
 
 const volumeColors: Record<string, string> = {
@@ -80,17 +40,51 @@ const SEOKeywords = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [keywords, setKeywords] = useState<KeywordResult[] | null>(null);
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
     
     setIsGenerating(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setKeywords(mockKeywords[tone] || mockKeywords.professional);
-    setIsGenerating(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-seo', {
+        body: { topic, tone },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Handle the keywords response
+      let parsedKeywords: KeywordResult[];
+      
+      if (Array.isArray(data.keywords)) {
+        parsedKeywords = data.keywords.map((k: { keyword?: string; volume?: string; difficulty?: string }) => ({
+          keyword: k.keyword || '',
+          volume: k.volume || 'Medium',
+          difficulty: k.difficulty || 'Medium',
+        }));
+      } else {
+        // Fallback if response is not in expected format
+        parsedKeywords = [{ keyword: String(data.keywords), volume: 'Medium', difficulty: 'Medium' }];
+      }
+
+      setKeywords(parsedKeywords);
+    } catch (error) {
+      console.error('Error generating keywords:', error);
+      toast({
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Failed to generate keywords. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleRegenerate = async () => {
@@ -218,12 +212,12 @@ const SEOKeywords = () => {
                     >
                       <td className="py-3 px-4 font-medium">{item.keyword}</td>
                       <td className="py-3 px-4">
-                        <Badge variant="secondary" className={cn('font-normal', volumeColors[item.volume])}>
+                        <Badge variant="secondary" className={cn('font-normal', volumeColors[item.volume] || volumeColors.Medium)}>
                           {item.volume}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
-                        <Badge variant="secondary" className={cn('font-normal', difficultyColors[item.difficulty])}>
+                        <Badge variant="secondary" className={cn('font-normal', difficultyColors[item.difficulty] || difficultyColors.Medium)}>
                           {item.difficulty}
                         </Badge>
                       </td>

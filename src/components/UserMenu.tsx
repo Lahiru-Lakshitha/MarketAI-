@@ -16,12 +16,13 @@ export const UserMenu: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
-  const initials = user?.name?.slice(0, 2).toUpperCase() || 'U';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = userName.slice(0, 2).toUpperCase();
 
   return (
     <DropdownMenu>
@@ -37,7 +38,7 @@ export const UserMenu: React.FC = () => {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.name}</p>
+            <p className="text-sm font-medium leading-none">{userName}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>

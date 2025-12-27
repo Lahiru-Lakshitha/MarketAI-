@@ -9,51 +9,52 @@ import { SaveButton } from '@/components/history/SaveButton';
 import { ToneSelector, ToneType } from '@/components/ToneSelector';
 import { RegenerateButton } from '@/components/RegenerateButton';
 import { Sparkles } from 'lucide-react';
-
-const mockCaptions: Record<ToneType, string[]> = {
-  professional: [
-    "Elevate your business with our cutting-edge solutions. We're committed to driving your success. 🚀 #BusinessGrowth #Innovation",
-    "Excellence isn't just our goal—it's our standard. Discover how we can transform your operations. 💼 #ProfessionalServices",
-    "Leading the industry with proven results. Let's discuss how we can add value to your business. 📈 #Results #Success",
-  ],
-  friendly: [
-    "Hey there! 👋 We've got something special just for you. Come check it out and let us know what you think!",
-    "You asked, we listened! Here's exactly what you've been waiting for. Can't wait to hear your thoughts! 💬",
-    "Big smiles over here because you're amazing! Thanks for being part of our journey. ❤️ #Community",
-  ],
-  sales: [
-    "🔥 LIMITED TIME: Get 20% off when you order today! Don't miss out on this exclusive deal. Link in bio! 🛒",
-    "Ready to transform your life? Our bestselling product is back in stock! Get yours before they're gone! ⚡",
-    "What if we told you there's a better way? Try us risk-free for 30 days. Your satisfaction, guaranteed! ✨",
-  ],
-  creative: [
-    "Imagine a world where your dreams become reality... ✨ That's what we're creating, one step at a time. Join the revolution!",
-    "Colors. Vibes. Energy. We're not just building a brand—we're crafting an experience. Ready to dive in? 🎨",
-    "They said it couldn't be done. We did it anyway. Here's to the dreamers and doers! 🌟 #Innovation #Creative",
-  ],
-  casual: [
-    "Just dropped something cool 😎 Check it out when you get a chance. No pressure, but you might love it!",
-    "Real talk: this is one of our favorites. Give it a try and tell us what you think! 🙌",
-    "Weekend vibes + our latest drop = perfect combo. Who's in? 🎉",
-  ],
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const SocialMedia = () => {
   const [description, setDescription] = useState('');
   const [tone, setTone] = useState<ToneType>('friendly');
   const [isGenerating, setIsGenerating] = useState(false);
   const [captions, setCaptions] = useState<string[] | null>(null);
+  const { toast } = useToast();
 
   const handleGenerate = async () => {
     if (!description.trim()) return;
     
     setIsGenerating(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setCaptions(mockCaptions[tone] || mockCaptions.friendly);
-    setIsGenerating(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-captions', {
+        body: { description, tone },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Parse the captions from the response
+      const captionsText = data.captions;
+      const parsedCaptions = captionsText
+        .split(/\d+\.\s+/)
+        .filter((c: string) => c.trim())
+        .map((c: string) => c.trim());
+
+      setCaptions(parsedCaptions.length > 0 ? parsedCaptions : [captionsText]);
+    } catch (error) {
+      console.error('Error generating captions:', error);
+      toast({
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Failed to generate captions. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleRegenerate = async () => {
